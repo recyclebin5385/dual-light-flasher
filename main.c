@@ -48,7 +48,7 @@
 #define INPUT_LATENT_WINDOW_LENGTH 60
 
 /**
- * Initial value and increment for each output channel.
+ * Definition of function whose output linearly increases for each frame.
  */
 typedef struct {
     /**
@@ -64,7 +64,7 @@ typedef struct {
      * Set (256 - true value) for decrement.
      */
     unsigned char increment;
-} ChannelValue;
+} LinearFunction;
 
 /**
  * Fragment of LED flash pattern.
@@ -76,9 +76,9 @@ typedef struct {
     unsigned char length;
 
     /**
-     * Initial value and increment for each output channel.
+     * Function defining each output channel value for each frame.
      */
-    ChannelValue channelValues[2];
+    LinearFunction outputFunctions[2];
 } FlashPatternFragment;
 
 // pattern which turns on and off LEDs mutually
@@ -128,48 +128,28 @@ const FlashPatternFragment* PATTERNS[] = {
 };
 
 /**
- * Current state of pattern progress.
+ * Strengths for each output channel.
+ *
+ * Valid range is [0, SUBFRAME_COUNTER_UPPER_LIMIT].
  */
-struct {
-    /** Current pattern. */
-    const FlashPatternFragment** pPattern;
-
-    /** Current pattern fragment. */
-    const FlashPatternFragment* pPatternFragment;
-
-    /**
-     * Frame counter which counts down at every frame.
-     *
-     * If the value becomes 0, moves to next pattern fragment.
-     */
-    unsigned char frameCounter;
-
-    /**
-     * Subframe counter which counts down at every subframe.
-     * 
-     * Valid range is [0, SUBFRAME_COUNTER_UPPER_LIMIT).
-     */
-    unsigned char subframeCounter;
-
-    /**
-     * Strengths for each output channel.
-     *
-     * Valid range is [0, SUBFRAME_COUNTER_UPPER_LIMIT].
-     */
-    unsigned char channelValues[2];
-} currentPatternProgress;
+volatile unsigned char outputValues[2];
 
 /**
  * GPIO for next subframe.
  */
-unsigned char nextGpio;
+volatile unsigned char nextGpio;
 
 /**
- * Counter for latent window of input which counts down at every frame.
- *
- * Input is ignored while not 0.
+ * Flag to wait for frame.
  */
-unsigned char inputLatentFrameCounter;
+volatile unsigned char framePending;
+
+/**
+ * Subframe counter which counts down at every subframe.
+ * 
+ * Valid range is [0, SUBFRAME_COUNTER_UPPER_LIMIT).
+ */
+volatile unsigned char subframeCounter;
 
 void __interrupt() intr(void) {
     // reset timer interrupt
@@ -180,24 +160,90 @@ void __interrupt() intr(void) {
     GPIO = nextGpio | (GPIO & 0b00000100);
 
     // update subframe count
-    currentPatternProgress.subframeCounter--;
+    subframeCounter--;
 
     // calculate GPIO state of the next subframe
-    nextGpio = (currentPatternProgress.channelValues[0] > currentPatternProgress.subframeCounter ? 0b01 : 0b00)
-            | (currentPatternProgress.channelValues[1] > currentPatternProgress.subframeCounter ? 0b10 : 0b00);
+    nextGpio = (outputValues[0] > subframeCounter ? 0b01 : 0b00)
+            | (outputValues[1] > subframeCounter ? 0b10 : 0b00);
 
-    if (currentPatternProgress.subframeCounter == 0) {
-        // reset subframe count
-        currentPatternProgress.subframeCounter = SUBFRAME_COUNTER_UPPER_LIMIT;
-        currentPatternProgress.channelValues[0] += currentPatternProgress.pPatternFragment->channelValues[0].increment;
-        currentPatternProgress.channelValues[1] += currentPatternProgress.pPatternFragment->channelValues[1].increment;
+    if (subframeCounter == 0) {
+        // process for each frame
+        subframeCounter = SUBFRAME_COUNTER_UPPER_LIMIT;
+        framePending = 0;
+    }
+}
 
-        // change pattern if GP2 input is off
+void main(void) {
+    OSCCON = 0b01100000; // clock frequency = 4MHz, oscillator depends on FOSC
+    ANSEL = 0b00000000; // no analog input
+    TRISIO = 0b00000100; // GP0, 1 as output, GP2 as input
+    GPIO = 0b11111111; // GPIO initialization
+    CMCON0 = 0b00000111; // comparator 0-2 off
+    OPTION_REG = 0b00000000; // prescaler 1:2
+    WPU = 0b00000100; // pull up GP2 input
+    IOC = 0b00000000; // disable GP interrupt
+    INTCON = 0b10100000; // enable TMR0 interrput
+
+    TMR0 = TMR0_INITIAL_VALUE;
+
+    outputValues[0] = 0;
+    outputValues[1] = 0;
+    framePending = 1;
+    nextGpio = 0;
+    subframeCounter = SUBFRAME_COUNTER_UPPER_LIMIT;
+
+    // Current state of pattern progress.
+
+    struct {
+        /** Current pattern. */
+        const FlashPatternFragment** pPattern;
+
+        /** Current pattern fragment. */
+        const FlashPatternFragment* pPatternFragment;
+
+        /**
+         * Frame counter which counts down at every frame.
+         *
+         * If the value becomes 0, moves to next pattern fragment.
+         */
+        unsigned char frameCounter;
+
+        /**
+         * Strengths for each output channel.
+         *
+         * Valid range is [0, SUBFRAME_COUNTER_UPPER_LIMIT].
+         */
+        unsigned char outputValues[2];
+    } currentPatternProgress = {
+        PATTERNS,
+        PATTERNS[0],
+        PATTERNS[0]->length, {
+            PATTERNS[0]->outputFunctions[0].initialValue,
+                    PATTERNS[0]->outputFunctions[1].initialValue,
+        }
+    };
+
+    // Counter for latent window of input which counts down at every frame.
+    // Input is ignored while not 0.
+    unsigned char inputLatentFrameCounter = INPUT_LATENT_WINDOW_LENGTH;
+
+    while (1) {
+        while (framePending) {
+        }
+
+        // process for each frame
+
+        framePending = 1;
+
+        // set current output channel values
+        outputValues[0] = currentPatternProgress.outputValues[0];
+        outputValues[1] = currentPatternProgress.outputValues[1];
+
+        // change pattern if button is pressed
         if (inputLatentFrameCounter > 0) {
             inputLatentFrameCounter--;
         } else {
             if ((GPIO & 0b00000100) == 0) {
-                // if GP2 input is off, change pattern
                 inputLatentFrameCounter = INPUT_LATENT_WINDOW_LENGTH;
 
                 currentPatternProgress.pPattern++;
@@ -206,13 +252,15 @@ void __interrupt() intr(void) {
                 }
                 currentPatternProgress.pPatternFragment = *currentPatternProgress.pPattern;
                 currentPatternProgress.frameCounter = currentPatternProgress.pPatternFragment->length;
-                currentPatternProgress.channelValues[0] = currentPatternProgress.pPatternFragment->channelValues[0].initialValue;
-                currentPatternProgress.channelValues[1] = currentPatternProgress.pPatternFragment->channelValues[1].initialValue;
+                currentPatternProgress.outputValues[0] = currentPatternProgress.pPatternFragment->outputFunctions[0].initialValue;
+                currentPatternProgress.outputValues[1] = currentPatternProgress.pPatternFragment->outputFunctions[1].initialValue;
             }
         }
 
         // update frame count
         currentPatternProgress.frameCounter--;
+        currentPatternProgress.outputValues[0] += currentPatternProgress.pPatternFragment->outputFunctions[0].increment;
+        currentPatternProgress.outputValues[1] += currentPatternProgress.pPatternFragment->outputFunctions[1].increment;
 
         if (currentPatternProgress.frameCounter == 0) {
             if (currentPatternProgress.pPatternFragment != PATTERN_FRAGMENT_LENGTH_FOREVER) {
@@ -227,35 +275,9 @@ void __interrupt() intr(void) {
                         break;
                 }
                 currentPatternProgress.frameCounter = currentPatternProgress.pPatternFragment->length;
-                currentPatternProgress.channelValues[0] = currentPatternProgress.pPatternFragment->channelValues[0].initialValue;
-                currentPatternProgress.channelValues[1] = currentPatternProgress.pPatternFragment->channelValues[1].initialValue;
+                currentPatternProgress.outputValues[0] = currentPatternProgress.pPatternFragment->outputFunctions[0].initialValue;
+                currentPatternProgress.outputValues[1] = currentPatternProgress.pPatternFragment->outputFunctions[1].initialValue;
             }
         }
-    }
-}
-
-void main(void) {
-    OSCCON = 0b01100000; // clock frequency = 4MHz, oscillator depends on FOSC
-    ANSEL = 0b00000000; // no analog input
-    TRISIO = 0b00000100; // GP0, 1 as output, GP2 as input
-    GPIO = 0b11111111; // GPIO initialization
-    CMCON0 = 0b00000111; // comparator 0-2 off
-    OPTION_REG = 0b00000000; // prescaler 1:2
-    WPU = 0b11111111; // pull up all inputs
-    IOC = 0b00000000; // disable GP interrupt
-    INTCON = 0b10100000; // enable TMR0 interrput
-
-    TMR0 = TMR0_INITIAL_VALUE;
-
-    currentPatternProgress.pPattern = PATTERNS;
-    currentPatternProgress.pPatternFragment = *currentPatternProgress.pPattern;
-    currentPatternProgress.frameCounter = currentPatternProgress.pPatternFragment->length;
-    currentPatternProgress.subframeCounter = SUBFRAME_COUNTER_UPPER_LIMIT;
-    currentPatternProgress.channelValues[0] = currentPatternProgress.pPatternFragment->channelValues[0].initialValue;
-    currentPatternProgress.channelValues[1] = currentPatternProgress.pPatternFragment->channelValues[1].initialValue;
-    nextGpio = 0;
-    inputLatentFrameCounter = INPUT_LATENT_WINDOW_LENGTH;
-
-    while (1) {
     }
 }
