@@ -27,15 +27,14 @@
 /**
  * Initial value of TMR0.
  *
- * CPU Clock = 4MHz
- * Instruction cycle = CPU Clock / 4 = 1MHz
- * TMR0 countup cycle = Instruction cycle / 2 = 500kHz
+ * CPU Clock = 2MHz
+ * TMR0 countup cycle = Instruction cycle = CPU Clock / 4 = 500kHz
  * Frame rate = 60Hz
  * Subframe rate = Frame rate * 128 = 7680Hz
  * TMR0 count per subframe = TMR0 countup cycle / Subframe rate = 65
- * TMR0 initial value = 256 - 65 = 191
+ * TMR0 initial value = 256 - TMR0 count per subframe = 191
  */
-#define TMR0_INITIAL_VALUE 191 
+#define TMR0_INITIAL_VALUE 191
 
 /**
  * Upper limit of subframe counter.
@@ -173,12 +172,12 @@ void __interrupt() intr(void) {
 }
 
 void main(void) {
-    OSCCON = 0b01100000; // clock frequency = 4MHz, oscillator depends on FOSC
+    OSCCON = 0b01010000; // clock frequency = 2MHz, oscillator depends on FOSC
     ANSEL = 0b00000000; // no analog input
     TRISIO = 0b00000100; // GP0, 1 as output, GP2 as input
     GPIO = 0b11111111; // GPIO initialization
     CMCON0 = 0b00000111; // comparator 0-2 off
-    OPTION_REG = 0b00000000; // prescaler 1:2
+    OPTION_REG = 0b00001000; // GPIO pullup enabled, TMR0 source is internal instruction cycle clock without prescaler
     WPU = 0b00000100; // pull up GP2 input
     IOC = 0b00000000; // disable GP interrupt
     INTCON = 0b10100000; // enable TMR0 interrput
