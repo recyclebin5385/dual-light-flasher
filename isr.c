@@ -1,6 +1,13 @@
 #include <xc.h>
 #include "global.h"
 
+#define QUOTE2(s) #s
+
+/**
+ * Quote number literal.
+ */
+#define QUOTE(s) QUOTE2(s)
+
 /**
  * Interrupt sevice routine.
  */
@@ -22,10 +29,12 @@ void __interrupt() isr(void) {
         GPIObits.GP1 = 0;
     }
 
-    // update subframe count
-    if (!--subframeCounter) {
-        // process for each frame
-        subframeCounter = SUBFRAME_COUNTER_UPPER_LIMIT;
-        framePending = 0;
-    }
+    // count down subframeCounter
+    // if subframeCounter = 0, set maximum value to it and
+    // reset frame pending flag 
+    __asm("DECFSZ _subframeCounter, 1");
+    __asm("GOTO $ + 4");
+    __asm("MOVLW " QUOTE(SUBFRAME_COUNTER_UPPER_LIMIT));
+    __asm("MOVWF _subframeCounter");
+    __asm("CLRF _framePending");
 }
