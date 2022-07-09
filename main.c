@@ -135,11 +135,6 @@ const FlashPatternFragment* PATTERNS[] = {
 volatile unsigned char outputValues[2];
 
 /**
- * GPIO for next subframe.
- */
-volatile unsigned char nextGpio;
-
-/**
  * Flag to wait for frame.
  */
 volatile unsigned char framePending;
@@ -157,16 +152,20 @@ void __interrupt() intr(void) {
     TMR0 = TMR0_INITIAL_VALUE;
 
     // update GPIO state
-    GPIO = nextGpio | (GPIO & 0b00000100);
+    if (outputValues[0] > subframeCounter) {
+        GPIObits.GP0 = 1;
+    } else {
+        GPIObits.GP0 = 0;
+    }
+
+    if (outputValues[1] > subframeCounter) {
+        GPIObits.GP1 = 1;
+    } else {
+        GPIObits.GP1 = 0;
+    }
 
     // update subframe count
-    subframeCounter--;
-
-    // calculate GPIO state of the next subframe
-    nextGpio = (outputValues[0] > subframeCounter ? 0b01 : 0b00)
-            | (outputValues[1] > subframeCounter ? 0b10 : 0b00);
-
-    if (subframeCounter == 0) {
+    if (!--subframeCounter) {
         // process for each frame
         subframeCounter = SUBFRAME_COUNTER_UPPER_LIMIT;
         framePending = 0;
@@ -189,7 +188,6 @@ void main(void) {
     outputValues[0] = 0;
     outputValues[1] = 0;
     framePending = 1;
-    nextGpio = 0;
     subframeCounter = SUBFRAME_COUNTER_UPPER_LIMIT;
 
     // Current state of pattern progress.
