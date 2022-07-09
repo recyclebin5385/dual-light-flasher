@@ -70,13 +70,13 @@ typedef struct {
 static const FlashPatternFragment MUTUAL_PATTERN[] = {
     {16,
         {
-            {0, 8},
-            {128, 248}
+            {0, 4},
+            {64, 252}
         }},
     {16,
         {
-            {128, 248},
-            {0, 8}
+            {64, 252},
+            {0, 4}
         }},
     {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
 };
@@ -87,13 +87,13 @@ static const FlashPatternFragment MUTUAL_PATTERN[] = {
 static const FlashPatternFragment SYNCHRONIZED_PATTERN[] = {
     {16,
         {
-            {0, 8},
-            {0, 8}
+            {0, 4},
+            {0, 4}
         }},
     {16,
         {
-            {128, 248},
-            {128, 248}
+            {64, 252},
+            {64, 252}
         }},
     {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
 };
@@ -104,8 +104,8 @@ static const FlashPatternFragment SYNCHRONIZED_PATTERN[] = {
 static const FlashPatternFragment ALWAYS_ON_PATTERN[] = {
     {PATTERN_FRAGMENT_LENGTH_FOREVER,
         {
-            {128, 0},
-            {128, 0}
+            {64, 0},
+            {64, 0}
         }}
 };
 
@@ -124,7 +124,7 @@ static const FlashPatternFragment* PATTERNS[] = {
  */
 void main(void) {
     // initialize registers
-    OSCCON = 0b01010000; // clock frequency = 2MHz, oscillator depends on FOSC
+    OSCCON = 0b01000000; // clock frequency = 1MHz, oscillator depends on FOSC
     ANSEL = 0b00000000; // no analog input
     TRISIO = 0b00000100; // GP0, 1 as output, GP2 as input
     GPIO = 0b00000000; // GPIO initialization

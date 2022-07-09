@@ -6,10 +6,10 @@
 /**
  * Initial value of TMR0.
  *
- * CPU Clock = 2MHz
- * TMR0 countup cycle = Instruction cycle = CPU Clock / 4 = 500kHz
+ * CPU Clock = 1MHz
+ * TMR0 countup cycle = Instruction cycle = CPU Clock / 4 = 250kHz
  * Frame rate = 60Hz
- * Subframe rate = Frame rate * 128 = 7680Hz
+ * Subframe rate = Frame rate * 64 = 3840Hz
  * TMR0 count per subframe = TMR0 countup cycle / Subframe rate = 65
  * TMR0 initial value = 256 - TMR0 count per subframe = 191
  */
@@ -17,9 +17,10 @@
 
 /**
  * Upper limit of subframe counter.
- * 
+ *
+ * Equals to maximum output level.
  */
-#define SUBFRAME_COUNTER_UPPER_LIMIT 128
+#define SUBFRAME_COUNTER_UPPER_LIMIT 64
 
 #ifdef	__cplusplus
 extern "C" {

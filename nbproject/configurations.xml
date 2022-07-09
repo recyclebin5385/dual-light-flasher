@@ -160,6 +160,7 @@
         <property key="debugoptions.debug-startup" value="Use system settings"/>
         <property key="debugoptions.reset-behaviour" value="Use system settings"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>
@@ -1379,9 +1380,9 @@
         <property key="lastid" value=""/>
         <property key="oscillator.auxfrequency" value="120"/>
         <property key="oscillator.auxfrequencyunit" value="Mega"/>
-        <property key="oscillator.frequency" value="500"/>
+        <property key="oscillator.frequency" value="250"/>
         <property key="oscillator.frequencyunit" value="Kilo"/>
-        <property key="oscillator.rcfrequency" value="2"/>
+        <property key="oscillator.rcfrequency" value="1"/>
         <property key="oscillator.rcfrequencyunit" value="Mega"/>
         <property key="periphADC1.altscl" value="false"/>
         <property key="periphADC1.minTacq" value=""/>
@@ -1874,9 +1875,9 @@
                   value="${memories.programmemory.ranges.default}"/>
         <property key="oscillator.auxfrequency" value="120"/>
         <property key="oscillator.auxfrequencyunit" value="Mega"/>
-        <property key="oscillator.frequency" value="500"/>
+        <property key="oscillator.frequency" value="250"/>
         <property key="oscillator.frequencyunit" value="Kilo"/>
-        <property key="oscillator.rcfrequency" value="2"/>
+        <property key="oscillator.rcfrequency" value="1"/>
         <property key="oscillator.rcfrequencyunit" value="Mega"/>
         <property key="periphADC1.altscl" value="false"/>
         <property key="periphADC1.minTacq" value=""/>
