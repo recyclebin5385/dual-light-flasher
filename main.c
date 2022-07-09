@@ -175,7 +175,7 @@ void main(void) {
     OSCCON = 0b01010000; // clock frequency = 2MHz, oscillator depends on FOSC
     ANSEL = 0b00000000; // no analog input
     TRISIO = 0b00000100; // GP0, 1 as output, GP2 as input
-    GPIO = 0b11111111; // GPIO initialization
+    GPIO = 0b00000000; // GPIO initialization
     CMCON0 = 0b00000111; // comparator 0-2 off
     OPTION_REG = 0b00001000; // GPIO pullup enabled, TMR0 source is internal instruction cycle clock without prescaler
     WPU = 0b00000100; // pull up GP2 input
