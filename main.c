@@ -190,6 +190,11 @@ void main(void) {
         outputValue0 = currentPatternProgress.outputValues[0];
         outputValue1 = currentPatternProgress.outputValues[1];
 
+        // update frame count
+        currentPatternProgress.frameCounter--;
+        currentPatternProgress.outputValues[0] += currentPatternProgress.pPatternFragment->outputFunctions[0].increment;
+        currentPatternProgress.outputValues[1] += currentPatternProgress.pPatternFragment->outputFunctions[1].increment;
+        
         // change pattern if button is pressed
         if (inputLatentFrameCounter > 0) {
             inputLatentFrameCounter--;
@@ -207,11 +212,6 @@ void main(void) {
                 currentPatternProgress.outputValues[1] = currentPatternProgress.pPatternFragment->outputFunctions[1].initialValue;
             }
         }
-
-        // update frame count
-        currentPatternProgress.frameCounter--;
-        currentPatternProgress.outputValues[0] += currentPatternProgress.pPatternFragment->outputFunctions[0].increment;
-        currentPatternProgress.outputValues[1] += currentPatternProgress.pPatternFragment->outputFunctions[1].increment;
 
         if (currentPatternProgress.frameCounter == 0) {
             if (currentPatternProgress.pPatternFragment->length != PATTERN_FRAGMENT_LENGTH_FOREVER) {
