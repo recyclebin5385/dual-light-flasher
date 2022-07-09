@@ -214,7 +214,7 @@ void main(void) {
         currentPatternProgress.outputValues[1] += currentPatternProgress.pPatternFragment->outputFunctions[1].increment;
 
         if (currentPatternProgress.frameCounter == 0) {
-            if (currentPatternProgress.pPatternFragment != PATTERN_FRAGMENT_LENGTH_FOREVER) {
+            if (currentPatternProgress.pPatternFragment->length != PATTERN_FRAGMENT_LENGTH_FOREVER) {
                 // move to next pattern fragment
                 currentPatternProgress.pPatternFragment++;
                 switch (currentPatternProgress.pPatternFragment->length) {
