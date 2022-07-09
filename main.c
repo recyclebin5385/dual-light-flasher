@@ -3,6 +3,7 @@
  */
 
 #include <xc.h>
+#include "global.h"
 
 #pragma config FOSC = INTOSCIO  // Oscillator Selection bits (INTOSCIO oscillator: I/O function on RA4/OSC2/CLKOUT pin, I/O function on RA5/OSC1/CLKIN)
 #pragma config WDTE = OFF       // Watchdog Timer Enable bit (WDT disabled)
@@ -23,23 +24,6 @@
  * Special pattern fragment length indicating the pattern fragment lasts forever.
  */
 #define PATTERN_FRAGMENT_LENGTH_FOREVER 0
-
-/**
- * Initial value of TMR0.
- *
- * CPU Clock = 2MHz
- * TMR0 countup cycle = Instruction cycle = CPU Clock / 4 = 500kHz
- * Frame rate = 60Hz
- * Subframe rate = Frame rate * 128 = 7680Hz
- * TMR0 count per subframe = TMR0 countup cycle / Subframe rate = 65
- * TMR0 initial value = 256 - TMR0 count per subframe = 191
- */
-#define TMR0_INITIAL_VALUE 191
-
-/**
- * Upper limit of subframe counter.
- */
-#define SUBFRAME_COUNTER_UPPER_LIMIT 128
 
 /**
  * Number of frames while input is ignored after an input event.
@@ -80,8 +64,10 @@ typedef struct {
     LinearFunction outputFunctions[2];
 } FlashPatternFragment;
 
-// pattern which turns on and off LEDs mutually
-const FlashPatternFragment MUTUAL_PATTERN[] = {
+/**
+ * LED flash pattern which turns on and off LEDs mutually.
+ */
+static const FlashPatternFragment MUTUAL_PATTERN[] = {
     {16,
         {
             {0, 8},
@@ -95,8 +81,10 @@ const FlashPatternFragment MUTUAL_PATTERN[] = {
     {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
 };
 
-// pattern which turns on and off LEDs at the same time
-const FlashPatternFragment SYNCHRONIZED_PATTERN[] = {
+/**
+ * LED flash pattern which turns on and off LEDs at the same time.
+ */
+static const FlashPatternFragment SYNCHRONIZED_PATTERN[] = {
     {16,
         {
             {0, 8},
@@ -110,8 +98,10 @@ const FlashPatternFragment SYNCHRONIZED_PATTERN[] = {
     {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
 };
 
-// pattern which always turns on LEDs
-const FlashPatternFragment ALWAYS_ON_PATTERN[] = {
+/**
+ * LED flash pattern which always turns on LEDs.
+ */
+static const FlashPatternFragment ALWAYS_ON_PATTERN[] = {
     {PATTERN_FRAGMENT_LENGTH_FOREVER,
         {
             {128, 0},
@@ -119,7 +109,10 @@ const FlashPatternFragment ALWAYS_ON_PATTERN[] = {
         }}
 };
 
-const FlashPatternFragment* PATTERNS[] = {
+/**
+ * List of LED flash pattern.
+ */
+static const FlashPatternFragment* PATTERNS[] = {
     MUTUAL_PATTERN,
     SYNCHRONIZED_PATTERN,
     ALWAYS_ON_PATTERN,
@@ -127,51 +120,10 @@ const FlashPatternFragment* PATTERNS[] = {
 };
 
 /**
- * Strengths for each output channel.
- *
- * Valid range is [0, SUBFRAME_COUNTER_UPPER_LIMIT].
+ * Main routine.
  */
-volatile unsigned char outputValues[2];
-
-/**
- * Flag to wait for frame.
- */
-volatile unsigned char framePending;
-
-/**
- * Subframe counter which counts down at every subframe.
- * 
- * Valid range is [0, SUBFRAME_COUNTER_UPPER_LIMIT).
- */
-volatile unsigned char subframeCounter;
-
-void __interrupt() intr(void) {
-    // reset timer interrupt
-    T0IF = 0;
-    TMR0 = TMR0_INITIAL_VALUE;
-
-    // update GPIO state
-    if (outputValues[0] > subframeCounter) {
-        GPIObits.GP0 = 1;
-    } else {
-        GPIObits.GP0 = 0;
-    }
-
-    if (outputValues[1] > subframeCounter) {
-        GPIObits.GP1 = 1;
-    } else {
-        GPIObits.GP1 = 0;
-    }
-
-    // update subframe count
-    if (!--subframeCounter) {
-        // process for each frame
-        subframeCounter = SUBFRAME_COUNTER_UPPER_LIMIT;
-        framePending = 0;
-    }
-}
-
 void main(void) {
+    // initialize registers
     OSCCON = 0b01010000; // clock frequency = 2MHz, oscillator depends on FOSC
     ANSEL = 0b00000000; // no analog input
     TRISIO = 0b00000100; // GP0, 1 as output, GP2 as input
@@ -180,16 +132,14 @@ void main(void) {
     OPTION_REG = 0b00001000; // GPIO pullup enabled, TMR0 source is internal instruction cycle clock without prescaler
     WPU = 0b00000100; // pull up GP2 input
     IOC = 0b00000000; // disable GP interrupt
-    INTCON = 0b10100000; // enable TMR0 interrput
 
-    TMR0 = TMR0_INITIAL_VALUE;
-
-    outputValues[0] = 0;
-    outputValues[1] = 0;
+    // initialize global variables
+    outputValue0 = 0;
+    outputValue1 = 0;
     framePending = 1;
     subframeCounter = SUBFRAME_COUNTER_UPPER_LIMIT;
 
-    // Current state of pattern progress.
+    // current state of pattern progress
 
     struct {
         /** Current pattern. */
@@ -220,9 +170,13 @@ void main(void) {
         }
     };
 
-    // Counter for latent window of input which counts down at every frame.
-    // Input is ignored while not 0.
+    // Counter for latent window of input which counts down at every frame
+    // input is ignored while not 0
     unsigned char inputLatentFrameCounter = INPUT_LATENT_WINDOW_LENGTH;
+
+    // enable TMR0
+    TMR0 = TMR0_INITIAL_VALUE;
+    INTCON = 0b10100000; // enable TMR0 interrput
 
     while (1) {
         while (framePending) {
@@ -233,8 +187,8 @@ void main(void) {
         framePending = 1;
 
         // set current output channel values
-        outputValues[0] = currentPatternProgress.outputValues[0];
-        outputValues[1] = currentPatternProgress.outputValues[1];
+        outputValue0 = currentPatternProgress.outputValues[0];
+        outputValue1 = currentPatternProgress.outputValues[1];
 
         // change pattern if button is pressed
         if (inputLatentFrameCounter > 0) {
