@@ -8,12 +8,12 @@
  *
  * CPU Clock = 1MHz
  * TMR0 countup cycle = Instruction cycle = CPU Clock / 4 = 250kHz
- * Frame rate = 60Hz
- * Subframe rate = Frame rate * 64 = 3840Hz
- * TMR0 count per subframe = TMR0 countup cycle / Subframe rate = 65
+ * Frame rate = 100Hz
+ * Subframe rate = Frame rate * 64 = 6400Hz
+ * TMR0 count per subframe = TMR0 countup cycle / Subframe rate = 39
  * TMR0 initial value = 256 - TMR0 count per subframe = 191
  */
-#define TMR0_INITIAL_VALUE 191
+#define TMR0_INITIAL_VALUE 217
 
 /**
  * Upper limit of subframe counter.

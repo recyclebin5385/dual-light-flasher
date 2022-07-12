@@ -7,5 +7,5 @@ Terminal GP2 is connected to push switch.
 If GP2 input level is low, the LED flash pattern changes.
 
 The brightness of each LED is controlled by software pulse width modulation.
-The brightness varies from 0 for complete off to 128 for complete on.
-The frame rate is approximately 60 frames per second.
+The brightness varies from 0 for complete off to 64 for complete on.
+The frame rate is approximately 100 frames per second.
