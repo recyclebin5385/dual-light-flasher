@@ -65,40 +65,6 @@ typedef struct {
 } FlashPatternFragment;
 
 /**
- * LED flash pattern which turns on and off LEDs mutually.
- */
-static const FlashPatternFragment MUTUAL_PATTERN[] = {
-    {16,
-        {
-            {0, 4},
-            {64, 252}
-        }},
-    {16,
-        {
-            {64, 252},
-            {0, 4}
-        }},
-    {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
-};
-
-/**
- * LED flash pattern which turns on and off LEDs at the same time.
- */
-static const FlashPatternFragment SYNCHRONIZED_PATTERN[] = {
-    {16,
-        {
-            {0, 4},
-            {0, 4}
-        }},
-    {16,
-        {
-            {64, 252},
-            {64, 252}
-        }},
-    {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
-};
-
-/**
  * LED flash pattern which always turns on LEDs.
  */
 static const FlashPatternFragment ALWAYS_ON_PATTERN[] = {
@@ -108,14 +74,114 @@ static const FlashPatternFragment ALWAYS_ON_PATTERN[] = {
             {64, 0}
         }}
 };
+/**
+ * LED flash pattern which turns on and off LEDs mutually.
+ */
+static const FlashPatternFragment MUTUAL_TRIANGLE_PATTERN[] = {
+    {32,
+        {
+            {0, 2},
+            {64, 254}
+        }},
+    {32,
+        {
+            {64, 254},
+            {0, 2}
+        }},
+    {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
+};
+
+/**
+ * LED flash pattern which turns on and off LEDs at the same time.
+ */
+static const FlashPatternFragment SYNCHRONIZED_TRIANGLE_PATTERN[] = {
+    {32,
+        {
+            {0, 2},
+            {0, 2}
+        }},
+    {32,
+        {
+            {64, 254},
+            {64, 254}
+        }},
+    {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
+};
+
+/**
+ * LED flash pattern which turns on and off LEDs mutually.
+ */
+static const FlashPatternFragment MUTUAL_SAW_PATTERN[] = {
+    {32,
+        {
+            {32, 255},
+            {64, 255}
+        }},
+    {32,
+        {
+            {64, 255},
+            {32, 255}
+        }},
+    {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
+};
+
+/**
+ * LED flash pattern which turns on and off LEDs at the same time.
+ */
+static const FlashPatternFragment SYNCHRONIZED_SAW_PATTERN[] = {
+    {64,
+        {
+            {64, 255},
+            {64, 255}
+        }},
+    {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
+};
+
+/**
+ * LED flash pattern which turns on and off LEDs mutually.
+ */
+static const FlashPatternFragment MUTUAL_SQUARE_PATTERN[] = {
+    {32,
+        {
+            {0, 0},
+            {64, 0}
+        }},
+    {32,
+        {
+            {64, 0},
+            {0, 0}
+        }},
+    {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
+};
+
+/**
+ * LED flash pattern which turns on and off LEDs at the same time.
+ */
+static const FlashPatternFragment SYNCHRONIZED_SQUARE_PATTERN[] = {
+    {32,
+        {
+            {64, 0},
+            {64, 0}
+        }},
+    {32,
+        {
+            {0, 0},
+            {0, 0}
+        }},
+    {PATTERN_FRAGMENT_LENGTH_END_OF_PATTERN}
+};
 
 /**
  * List of LED flash pattern.
  */
 static const FlashPatternFragment* PATTERNS[] = {
-    MUTUAL_PATTERN,
-    SYNCHRONIZED_PATTERN,
     ALWAYS_ON_PATTERN,
+    MUTUAL_TRIANGLE_PATTERN,
+    SYNCHRONIZED_TRIANGLE_PATTERN,
+    MUTUAL_SAW_PATTERN,
+    SYNCHRONIZED_SAW_PATTERN,
+    MUTUAL_SQUARE_PATTERN,
+    SYNCHRONIZED_SQUARE_PATTERN,
     0 /* end of array */
 };
 
@@ -194,7 +260,7 @@ void main(void) {
         currentPatternProgress.frameCounter--;
         currentPatternProgress.outputValues[0] += currentPatternProgress.pPatternFragment->outputFunctions[0].increment;
         currentPatternProgress.outputValues[1] += currentPatternProgress.pPatternFragment->outputFunctions[1].increment;
-        
+
         // change pattern if button is pressed
         if (inputLatentFrameCounter > 0) {
             inputLatentFrameCounter--;
