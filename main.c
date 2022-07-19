@@ -185,6 +185,10 @@ static const FlashPatternFragment* PATTERNS[] = {
     0 /* end of array */
 };
 
+#define PATTERN_COUNT 7
+
+__EEPROM_DATA(0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
+
 /**
  * Main routine.
  */
@@ -204,6 +208,12 @@ void main(void) {
     outputValue1 = 0;
     framePending = 1;
     subframeCounter = SUBFRAME_COUNTER_UPPER_LIMIT;
+
+    //current pattern index
+    unsigned char patternIndex = EEPROM_READ(0);
+    if (patternIndex > PATTERN_COUNT) {
+        patternIndex = 0;
+    }
 
     // current state of pattern progress
 
@@ -228,11 +238,11 @@ void main(void) {
          */
         unsigned char outputValues[2];
     } currentPatternProgress = {
-        PATTERNS,
-        PATTERNS[0],
-        PATTERNS[0]->length, {
-            PATTERNS[0]->outputFunctions[0].initialValue,
-                    PATTERNS[0]->outputFunctions[1].initialValue,
+        PATTERNS + patternIndex,
+        PATTERNS[patternIndex],
+        PATTERNS[patternIndex]->length, {
+            PATTERNS[patternIndex]->outputFunctions[0].initialValue,
+                    PATTERNS[patternIndex]->outputFunctions[1].initialValue,
         }
     };
 
@@ -267,6 +277,12 @@ void main(void) {
         } else {
             if ((GPIO & 0b00000100) == 0) {
                 inputLatentFrameCounter = INPUT_LATENT_WINDOW_LENGTH;
+
+                patternIndex++;
+                if (patternIndex > PATTERN_COUNT) {
+                    patternIndex = 0;
+                }
+                EEPROM_WRITE(0, patternIndex);
 
                 currentPatternProgress.pPattern++;
                 if (*currentPatternProgress.pPattern == 0) {
