@@ -189,6 +189,38 @@ static const FlashPatternFragment* PATTERNS[] = {
 
 __EEPROM_DATA(0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
 
+/*
+ * Current state of pattern progress.
+ */
+struct {
+    /** Current pattern. */
+    const FlashPatternFragment** pPattern;
+
+    /** Current pattern fragment. */
+    const FlashPatternFragment* pPatternFragment;
+
+    /**
+     * Frame counter which counts down at every frame.
+     *
+     * If the value becomes 0, moves to next pattern fragment.
+     */
+    unsigned char frameCounter;
+
+    /**
+     * Strengths for each output channel.
+     *
+     * Valid range is [0, SUBFRAME_COUNTER_UPPER_LIMIT].
+     */
+    unsigned char outputValues[2];
+} currentPatternProgress;
+
+inline static void initializeCurrentPattern() {
+    currentPatternProgress.pPatternFragment = *currentPatternProgress.pPattern;
+    currentPatternProgress.frameCounter = currentPatternProgress.pPatternFragment->length;
+    currentPatternProgress.outputValues[0] = currentPatternProgress.pPatternFragment->outputFunctions[0].initialValue;
+    currentPatternProgress.outputValues[1] = currentPatternProgress.pPatternFragment->outputFunctions[1].initialValue;
+}
+
 /**
  * Main routine.
  */
@@ -215,36 +247,10 @@ void main(void) {
         patternIndex = 0;
     }
 
-    // current state of pattern progress
 
-    struct {
-        /** Current pattern. */
-        const FlashPatternFragment** pPattern;
 
-        /** Current pattern fragment. */
-        const FlashPatternFragment* pPatternFragment;
-
-        /**
-         * Frame counter which counts down at every frame.
-         *
-         * If the value becomes 0, moves to next pattern fragment.
-         */
-        unsigned char frameCounter;
-
-        /**
-         * Strengths for each output channel.
-         *
-         * Valid range is [0, SUBFRAME_COUNTER_UPPER_LIMIT].
-         */
-        unsigned char outputValues[2];
-    } currentPatternProgress = {
-        PATTERNS + patternIndex,
-        PATTERNS[patternIndex],
-        PATTERNS[patternIndex]->length, {
-            PATTERNS[patternIndex]->outputFunctions[0].initialValue,
-                    PATTERNS[patternIndex]->outputFunctions[1].initialValue,
-        }
-    };
+    currentPatternProgress.pPattern = PATTERNS + patternIndex;
+    initializeCurrentPattern();
 
     // Counter for latent window of input which counts down at every frame
     // input is ignored while not 0
@@ -288,10 +294,7 @@ void main(void) {
                 if (*currentPatternProgress.pPattern == 0) {
                     currentPatternProgress.pPattern = PATTERNS;
                 }
-                currentPatternProgress.pPatternFragment = *currentPatternProgress.pPattern;
-                currentPatternProgress.frameCounter = currentPatternProgress.pPatternFragment->length;
-                currentPatternProgress.outputValues[0] = currentPatternProgress.pPatternFragment->outputFunctions[0].initialValue;
-                currentPatternProgress.outputValues[1] = currentPatternProgress.pPatternFragment->outputFunctions[1].initialValue;
+                initializeCurrentPattern();
             }
         }
 
