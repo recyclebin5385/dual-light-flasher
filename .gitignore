@@ -1,6 +1,6 @@
-/build
-/dist
-/nbproject/private
-/nbproject/Makefile-*.mk
-/nbproject/Makefile-genesis.properties
-/disassembly
+/mplabx/build
+/mplabx/dist
+/mplabx/nbproject/private
+/mplabx/nbproject/Makefile-*.mk
+/mplabx/nbproject/Makefile-genesis.properties
+/mplabx/disassembly

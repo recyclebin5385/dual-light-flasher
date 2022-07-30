@@ -1,6 +1,6 @@
 A program which turns on and off two LEDs periodically with predefined patterns.
 
-This program is intended to be run with microcontroller PIC12F683.
+This program is intended to be built with MPLAB X IDE and run with microcontroller PIC12F683.
 
 Terminals GP0 and GP1 are connected to LEDs.
 Terminal GP2 is connected to push switch.
