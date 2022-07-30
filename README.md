@@ -1,14 +1,14 @@
-# Dual light flasher circuit
+# Dual Light Flasher
 
 ## Summary
 
-A circuit which which turns on and off two LEDs periodically with predefined patterns.
+A circuit which turns on and off two LEDs periodically with predefined patterns.
 
 ## Folder structure
 
-- circuit: description of the circuit
+- circuit: description of the circuit hardware
 - mplabx: MPLAB X IDE project for microcomputer program
 
-## LICENSE
+## License
 
 This software and documents are released under the BSD 2-Clause License.
